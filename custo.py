@@ -413,6 +413,7 @@ def coletar_dados_orcamento():
         # Valores P2
         "p2_pec_val": st.session_state.get("p2_pec_val", 0.0),
         "p2_app_val": st.session_state.get("p2_app_val", 0.0),
+        "p2_comodato_val": st.session_state.get("p2_comodato_val", 0.0),
         "p2_regulacao_val": st.session_state.get("p2_regulacao_val", 0.0),
         "p2_esus_val": st.session_state.get("p2_esus_val", 0.0),
         "p2_hosp_val": st.session_state.get("p2_hosp_val", 0.0),
@@ -799,6 +800,7 @@ def display_p2_calculator():
         # Inputs para valores
         if 'p2_pec_val' not in st.session_state: st.session_state.p2_pec_val = 0.0
         if 'p2_app_val' not in st.session_state: st.session_state.p2_app_val = 0.0
+        if 'p2_comodato_val' not in st.session_state: st.session_state.p2_comodato_val = 0.0  # Novo campo comodato
         if 'p2_regulacao_val' not in st.session_state: st.session_state.p2_regulacao_val = 0.0
         if 'p2_esus_val' not in st.session_state: st.session_state.p2_esus_val = 0.0
         if 'p2_hosp_val' not in st.session_state: st.session_state.p2_hosp_val = 0.0
@@ -827,6 +829,15 @@ def display_p2_calculator():
                 help=app_description
             )
             
+            # Novo campo para Comodato
+            val_comodato = st.number_input(
+                "COMODATO APARELHO SMARTPHONE OU TABLET:",
+                min_value=0.0,
+                format="%.2f",
+                key="p2_comodato_val",
+                help="Valor para comodato de aparelhos para uso dos aplicativos"
+            )
+            
             val_regulacao = st.number_input(
                 "Sistema de Regulação:",
                 min_value=0.0,
@@ -852,8 +863,8 @@ def display_p2_calculator():
                 help="Solução completa para gestão hospitalar"
             )
 
-    # Cálculo Total
-    total_p2 = val_pec + val_app + val_regulacao + val_esus + val_hosp
+    # Cálculo Total - atualizando para incluir o valor de comodato
+    total_p2 = val_pec + val_app + val_comodato + val_regulacao + val_esus + val_hosp
     
     # Exibição dos resultados em cards visuais
     st.markdown("### Resumo dos Serviços Tecnológicos")
@@ -869,9 +880,10 @@ def display_p2_calculator():
         if qtd_ace > 0:
             app_title += f" ({qtd_ace} agentes)"
         metric_card(app_title, val_app)
-        metric_card("eSUS Farma", val_esus)
+        metric_card("Comodato Aparelhos", val_comodato)
     
     with col3:
+        metric_card("eSUS Farma", val_esus)
         metric_card("Sistema Hospitalar", val_hosp)
     
     # Card do total
@@ -891,8 +903,8 @@ def display_p2_calculator():
             app_label += f' ({qtd_ace} agentes)'
             
         dados = pd.DataFrame({
-            'Serviço': ['PEC Servidor', app_label, 'Sistema de Regulação', 'eSUS Farma', 'Sistema Hospitalar'],
-            'Valor': [val_pec, val_app, val_regulacao, val_esus, val_hosp]
+            'Serviço': ['PEC Servidor', app_label, 'Comodato Aparelhos', 'Sistema de Regulação', 'eSUS Farma', 'Sistema Hospitalar'],
+            'Valor': [val_pec, val_app, val_comodato, val_regulacao, val_esus, val_hosp]
         })
         
         fig = px.bar(
@@ -1053,12 +1065,68 @@ def display_summary():
     st.header("Resumo do Orçamento Completo")
     st.caption("Visualize o orçamento consolidado com todos os serviços selecionados.")
     
+    # Configurações financeiras - adicionando campos para comissão, lucro e impostos
+    with st.expander("⚙️ Configurações Financeiras", expanded=False):
+        st.subheader("Ajustes Financeiros")
+        
+        # Inicializar valores no session_state
+        if 'comissao_percentual' not in st.session_state: st.session_state.comissao_percentual = 5.0
+        if 'lucro_percentual' not in st.session_state: st.session_state.lucro_percentual = 20.0
+        if 'imposto_percentual' not in st.session_state: st.session_state.imposto_percentual = 8.65
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            comissao_percentual = st.number_input(
+                "Comissão (%)",
+                min_value=0.0,
+                max_value=100.0,
+                value=st.session_state.comissao_percentual,
+                step=0.5,
+                format="%.2f",
+                key="comissao_percentual",
+                help="Percentual para comissão de vendas"
+            )
+        
+        with col2:
+            lucro_percentual = st.number_input(
+                "Lucro (%)",
+                min_value=0.0,
+                max_value=100.0,
+                value=st.session_state.lucro_percentual,
+                step=0.5,
+                format="%.2f",
+                key="lucro_percentual",
+                help="Percentual de lucro sobre o valor"
+            )
+            
+        with col3:
+            imposto_percentual = st.number_input(
+                "Impostos (%)",
+                min_value=0.0,
+                max_value=100.0,
+                value=st.session_state.imposto_percentual,
+                step=0.05,
+                format="%.2f",
+                key="imposto_percentual",
+                help="Percentual de impostos sobre o valor"
+            )
+    
     # Recuperar valores dos orçamentos
     total_p1 = st.session_state.get('total_p1', 0)
     total_p2 = st.session_state.get('total_p2', 0)
     total_p3 = st.session_state.get('total_p3', 0)
     
-    total_geral_mensal = total_p1 + total_p2
+    # Valor base sem adicionais
+    total_base_mensal = total_p1 + total_p2
+    
+    # Cálculos de valores adicionais
+    comissao_valor = total_base_mensal * (st.session_state.comissao_percentual / 100)
+    lucro_valor = total_base_mensal * (st.session_state.lucro_percentual / 100)
+    impostos_valor = total_base_mensal * (st.session_state.imposto_percentual / 100)
+    
+    # Total com adicionais
+    total_geral_mensal = total_base_mensal + comissao_valor + lucro_valor + impostos_valor
     total_geral_anual = total_geral_mensal * 12 + total_p3
     
     # Exibir informações do cliente
@@ -1073,8 +1141,8 @@ def display_summary():
     st.markdown("### Valores Mensais")
     
     dados_mensais = pd.DataFrame({
-        'Categoria': ['P1 - Consultoria', 'P2 - Tecnologia', 'Total Mensal'],
-        'Valor': [total_p1, total_p2, total_geral_mensal]
+        'Categoria': ['P1 - Consultoria', 'P2 - Tecnologia', 'Subtotal', 'Comissão', 'Lucro', 'Impostos', 'Total Mensal'],
+        'Valor': [total_p1, total_p2, total_base_mensal, comissao_valor, lucro_valor, impostos_valor, total_geral_mensal]
     })
     
     col1, col2 = st.columns([3, 2])
@@ -1111,46 +1179,36 @@ def display_summary():
     st.markdown("### Valores Únicos/Anuais")
     st.metric("P3 - Sistemas de Integração", formatar_valor_reais(total_p3))
     
-    # Card do orçamento total
+    # Card do orçamento total com detalhamento
     st.markdown(f"""
     <div class="total-card" style="background-color: #f8f9fa; border-left-color: #0066CC; padding: 25px;">
         <h2 style="margin-bottom: 5px;">ORÇAMENTO TOTAL</h2>
         <p style="font-size: 0.9em; margin-bottom: 15px;">Valor mensal de serviços contínuos + sistemas de integração</p>
         <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
             <div>
-                <p style="font-size: 0.9em; margin: 0;">Valor Mensal:</p>
-                <h3 style="margin: 0;">{formatar_valor_reais(total_geral_mensal)}</h3>
+                <p style="font-size: 0.9em; margin: 0;">Valor Base Mensal:</p>
+                <h4 style="margin: 0;">{formatar_valor_reais(total_base_mensal)}</h4>
+                <p style="font-size: 0.9em; margin: 5px 0 0 0;">Comissão ({st.session_state.comissao_percentual}%): {formatar_valor_reais(comissao_valor)}</p>
+                <p style="font-size: 0.9em; margin: 0;">Lucro ({st.session_state.lucro_percentual}%): {formatar_valor_reais(lucro_valor)}</p>
+                <p style="font-size: 0.9em; margin: 0;">Impostos ({st.session_state.imposto_percentual}%): {formatar_valor_reais(impostos_valor)}</p>
+                <h3 style="margin: 10px 0 0 0;">Total Mensal: {formatar_valor_reais(total_geral_mensal)}</h3>
             </div>
             <div>
                 <p style="font-size: 0.9em; margin: 0;">Valor Anual:</p>
                 <h3 style="margin: 0;">{formatar_valor_reais(total_geral_anual)}</h3>
+                <p style="font-size: 0.8em; margin: 5px 0 0 0;">(12x mensal + P3)</p>
             </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
     
-    # Gráfico de barras comparativo
-    st.markdown("### Comparativo de Serviços")
-    
-    # Calcular valores detalhados para o gráfico
-    if 'p1_consultoria_val' not in st.session_state: st.session_state.p1_consultoria_val = 0
-    if 'p1_capacitacao_val' not in st.session_state: st.session_state.p1_capacitacao_val = 0
-    if 'p1_bi_val' not in st.session_state: st.session_state.p1_bi_val = 0
-    if 'p2_pec_val' not in st.session_state: st.session_state.p2_pec_val = 0
-    if 'p2_app_val' not in st.session_state: st.session_state.p2_app_val = 0
-    if 'p2_regulacao_val' not in st.session_state: st.session_state.p2_regulacao_val = 0
-    if 'p2_esus_val' not in st.session_state: st.session_state.p2_esus_val = 0
-    if 'p2_hosp_val' not in st.session_state: st.session_state.p2_hosp_val = 0
-    if 'p3_cnes_val' not in st.session_state: st.session_state.p3_cnes_val = 0
-    if 'p3_investsus_val' not in st.session_state: st.session_state.p3_investsus_val = 0
-    if 'p3_transferegov_val' not in st.session_state: st.session_state.p3_transferegov_val = 0
-    if 'p3_sismob_val' not in st.session_state: st.session_state.p3_sismob_val = 0
-    if 'p3_fpo_bpa_val' not in st.session_state: st.session_state.p3_fpo_bpa_val = 0
+    # Atualizar dados detalhados para incluir comodato
+    if 'p2_comodato_val' not in st.session_state: st.session_state.p2_comodato_val = 0
     
     dados_detalhados = pd.DataFrame({
         'Serviço': [
             'Consultoria', 'Capacitação', 'BI Inteligente',
-            'PEC Servidor', 'App ACE', 'Regulação', 'eSUS Farma', 'Sistema Hospitalar',
+            'PEC Servidor', 'App ACE', 'Comodato Aparelhos', 'Regulação', 'eSUS Farma', 'Sistema Hospitalar',
             'CNES', 'InvestSUS', 'TransfereGov', 'SISMOB', 'FPO e BPA'
         ],
         'Valor': [
@@ -1159,6 +1217,7 @@ def display_summary():
             st.session_state.p1_bi_val,
             st.session_state.p2_pec_val,
             st.session_state.p2_app_val,
+            st.session_state.p2_comodato_val,
             st.session_state.p2_regulacao_val,
             st.session_state.p2_esus_val,
             st.session_state.p2_hosp_val,
@@ -1170,7 +1229,7 @@ def display_summary():
         ],
         'Categoria': [
             'P1', 'P1', 'P1',
-            'P2', 'P2', 'P2', 'P2', 'P2',
+            'P2', 'P2', 'P2', 'P2', 'P2', 'P2',
             'P3', 'P3', 'P3', 'P3', 'P3'
         ]
     })
@@ -1269,7 +1328,8 @@ with st.sidebar:
         # Resetar quantidades
         st.session_state.p1_qtd = 1
         st.session_state.p2_qtd = 1
-        st.session_state.p3_faixa = faixas_populacionais[0]
+        st.session_state.p2_qtd_ace = 0
+        st.session_state.faixa_populacional = faixas_populacionais[0]
         
         # Força o rerender da página para mostrar os campos limpos
         st.rerun()
