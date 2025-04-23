@@ -518,6 +518,7 @@ def display_p2_calculator():
 
     with col1:
         if 'p2_qtd' not in st.session_state: st.session_state.p2_qtd = 1
+        if 'p2_qtd_ace' not in st.session_state: st.session_state.p2_qtd_ace = 0
         
         # Reutilizar a faixa populacional já selecionada
         faixa = st.session_state.get('faixa_populacional', faixas_populacionais[0])
@@ -531,6 +532,19 @@ def display_p2_calculator():
             help="Número de unidades que receberão os serviços tecnológicos"
         )
         
+        # Campo para quantidade de ACE
+        qtd_ace = st.number_input(
+            "Quantidade de ACE:", 
+            min_value=0, 
+            step=1, 
+            key="p2_qtd_ace",
+            help="Número de Agentes de Combate às Endemias que utilizarão o aplicativo"
+        )
+        
+        # Explicação sobre ACE
+        if qtd_ace > 0:
+            st.info(f"💡 O valor do App ACE será calculado considerando {qtd_ace} agentes")
+        
         # Sugerir valores com base na faixa populacional
         if st.button("📊 Sugerir Valores de Serviços", help="Preenche com valores sugeridos para esta faixa populacional"):
             if faixa in VALORES_POR_FAIXA:
@@ -539,11 +553,19 @@ def display_p2_calculator():
                 fator_ajuste = max(1.0, qtd_unidades_p2 / 5)
                 
                 st.session_state.p2_pec_val = valores_sugeridos.get("p2_pec", 20000.0) * fator_ajuste
-                st.session_state.p2_app_val = valores_sugeridos.get("p2_app", 2000.0) * fator_ajuste
+                
+                # Calcular valor do aplicativo ACE baseado na quantidade de agentes
+                # Base de R$ 50,00 por agente + valor base do município
+                valor_base_app = valores_sugeridos.get("p2_app", 2000.0)
+                if qtd_ace > 0:
+                    st.session_state.p2_app_val = valor_base_app + (qtd_ace * 50.0)
+                else:
+                    st.session_state.p2_app_val = valor_base_app
+                
                 # Definir outros valores com valores padrão
-                st.session_state.p2_regulacao_val = 5000.0 * fator_ajuste
-                st.session_state.p2_esus_val = 3500.0 * fator_ajuste
-                st.session_state.p2_hosp_val = 8000.0 * fator_ajuste
+                st.session_state.p2_regulacao_val = valores_sugeridos.get("p2_regulacao", 5000.0) * fator_ajuste
+                st.session_state.p2_esus_val = valores_sugeridos.get("p2_esus", 3500.0) * fator_ajuste
+                st.session_state.p2_hosp_val = valores_sugeridos.get("p2_hosp", 8000.0) * fator_ajuste
                 
                 st.success(f"Valores tecnológicos sugeridos aplicados!")
 
@@ -577,12 +599,17 @@ def display_p2_calculator():
                 help="Prontuário Eletrônico do Cidadão com análises avançadas"
             )
             
+            # Atualizar descrição para incluir informação sobre agentes
+            app_description = "Aplicativo para Agentes Comunitários de Endemias"
+            if qtd_ace > 0:
+                app_description += f" ({qtd_ace} agentes)"
+                
             val_app = st.number_input(
                 "Aplicativo Visita ACE:",
                 min_value=0.0,
                 format="%.2f",
                 key="p2_app_val",
-                help="Aplicativo para Agentes Comunitários de Endemias"
+                help=app_description
             )
             
             val_regulacao = st.number_input(
@@ -622,7 +649,11 @@ def display_p2_calculator():
         metric_card("Sistema de Regulação", val_regulacao)
     
     with col2:
-        metric_card("Aplicativo ACE", val_app)
+        # Adicionar informação da quantidade de ACE no card se aplicável
+        app_title = "Aplicativo ACE"
+        if qtd_ace > 0:
+            app_title += f" ({qtd_ace} agentes)"
+        metric_card(app_title, val_app)
         metric_card("eSUS Farma", val_esus)
     
     with col3:
@@ -639,8 +670,13 @@ def display_p2_calculator():
     
     # Gráfico de distribuição
     if total_p2 > 0:
+        # Modificar o título do App ACE para incluir informação sobre quantidade de agentes
+        app_label = 'App Visita ACE'
+        if qtd_ace > 0:
+            app_label += f' ({qtd_ace} agentes)'
+            
         dados = pd.DataFrame({
-            'Serviço': ['PEC Servidor', 'App Visita ACE', 'Sistema de Regulação', 'eSUS Farma', 'Sistema Hospitalar'],
+            'Serviço': ['PEC Servidor', app_label, 'Sistema de Regulação', 'eSUS Farma', 'Sistema Hospitalar'],
             'Valor': [val_pec, val_app, val_regulacao, val_esus, val_hosp]
         })
         
