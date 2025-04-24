@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from utils import formatar_valor_reais
 
 def display_accounting_costs():
-    st.header("Custos Reais - AUREA")
+    st.header("Custos Reais")
     st.caption("Análise detalhada dos custos operacionais e simulação de contrato")
     
     # Inicialização dos dados no session_state se não existirem
@@ -172,6 +172,37 @@ def display_accounting_costs():
                     format="%.2f",
                     key=f"custo_valor_{i}"
                 )
+        
+        # Adicionar opção para excluir itens
+        with st.expander("Excluir itens"):
+            st.warning("Selecione os itens que deseja excluir. Esta ação não pode ser desfeita.")
+            
+            # Criar tabela com itens da categoria selecionada para permitir seleção para exclusão
+            itens_para_excluir = []
+            
+            for i in indices_categoria:
+                col1, col2 = st.columns([5, 1])
+                with col1:
+                    st.text(f"{st.session_state.custos_descricao[i]} - {formatar_valor_reais(st.session_state.custos_valores[i])}")
+                with col2:
+                    if st.button("🗑️", key=f"excluir_item_{i}"):
+                        itens_para_excluir.append(i)
+            
+            # Se houver itens para excluir, processamos a exclusão
+            if itens_para_excluir:
+                # Ordenar em ordem decrescente para não afetar os índices durante a remoção
+                for i in sorted(itens_para_excluir, reverse=True):
+                    del st.session_state.custos_items[i]
+                    del st.session_state.custos_descricao[i]
+                    del st.session_state.custos_valores[i]
+                    del st.session_state.custos_classificacao[i]
+                    del st.session_state.custos_categoria[i]
+                
+                # Reajustar os números dos itens
+                st.session_state.custos_items = list(range(1, len(st.session_state.custos_descricao) + 1))
+                
+                st.success(f"Item(s) excluído(s) com sucesso!")
+                st.rerun()
         
         # Botão para adicionar novo item
         with st.expander("Adicionar novo item"):
