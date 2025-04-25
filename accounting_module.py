@@ -4,6 +4,24 @@ import plotly.express as px
 import plotly.graph_objects as go
 from utils import formatar_valor_reais
 
+# Função para estilizar as linhas baseado na classificação
+def highlight_classificacao(df):
+    # Definir as cores para cada tipo de classificação
+    cores = {
+        "FIXO MENSAL": "background-color: rgba(0, 128, 0, 0.8)",  # Verde
+        "POR CONTRATO": "background-color: rgba(255, 255, 0, 0.8)",  # Amarelo
+        "SAZONAL": "background-color: rgba(255, 50, 0, 0.8)"  # Vermelho claro
+    }
+    
+    # Criar estilo vazio do mesmo tamanho do dataframe
+    estilo = pd.DataFrame('', index=df.index, columns=df.columns)
+    
+    # Aplicar estilo baseado na coluna CLASSIFICAÇÃO
+    for i, valor in enumerate(df['CLASSIFICAÇÃO']):
+        estilo.iloc[i, :] = cores.get(valor, '')
+        
+    return estilo
+
 def display_accounting_costs():
     st.header("Custos Reais")
     st.caption("Análise detalhada dos custos operacionais e simulação de contrato")
@@ -259,7 +277,7 @@ def display_accounting_costs():
     
     # Exibir tabela de custos formatada
     st.dataframe(
-        df_filtered,
+        df_filtered.style.apply(highlight_classificacao, axis=None),
         column_config={
             "ITEM": st.column_config.NumberColumn("ITEM", format="%d"),
             "DESCRIÇÃO": st.column_config.TextColumn("DESCRIÇÃO"),
