@@ -7,56 +7,140 @@ CORES = {
     "texto": "#333333",
     "destaque": "#FF9900",
     "background": "#F8F9FA",
-    "erro": "#DC3545"
+    "erro": "#DC3545",
+    "sucesso": "#28A745",
+    "card": "#FFFFFF"
 }
 
 # Adicionar CSS personalizado
 def local_css():
     st.markdown(f"""
         <style>
-        .stApp {{
-            background-color: {CORES["background"]};
+        /* Remoção RADICAL de todos os espaços em branco no topo */
+        .main .block-container,
+        [data-testid="stSidebar"] .block-container,
+        div.block-container.css-z5fcl4.ea3mdgi4,
+        div.block-container.css-1y4p8pa.ea3mdgi4,
+        div.withScreencast,
+        div.main.css-k1vhr4.ea3mdgi5,
+        div.st-emotion-cache-z5fcl4.ea3mdgi4,
+        div.st-emotion-cache-1y4p8pa.ea3mdgi4,
+        section[data-testid="stSidebar"] > div,
+        div[data-testid="stVerticalBlock"],
+        div.stApp,
+        header, 
+        header[data-testid="stHeader"],
+        div.element-container,
+        div[class^="st-emotion-cache-"] {{
+            padding-top: 0 !important;
+            margin-top: 0 !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            height: auto !important;
         }}
-        h1, h2, h3 {{
-            color: {CORES["primaria"]};
+        
+        /* Forçar todas as margens de todos os elementos para zero */
+        div, header, section, main, aside, article, 
+        div.element-container.st-emotion-cache-1n76uvr.e1f1d6gn2,
+        div.element-container.st-emotion-cache-ocqkz7.e1f1d6gn3 {{
+            margin-top: 0 !important;
+            padding-top: 0 !important;
         }}
-        .stButton>button {{
-            background-color: {CORES["primaria"]};
-            color: white;
-            border-radius: 5px;
-            border: none;
-            padding: 10px 15px;
+        
+        /* Remover decorações e cabeçalhos */
+        div[data-testid="stDecoration"],
+        div[data-testid="stToolbar"],
+        div.stDecorationContainer,
+        div.stToolbar {{
+            display: none !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            visibility: hidden !important;
         }}
-        .stButton>button:hover {{
-            background-color: {CORES["secundaria"]};
+        
+        /* Ajustar o container principal para colar no topo */
+        .main .block-container {{
+            padding: 0 1rem 5rem 1rem !important;
+            max-width: 100% !important;
         }}
-        .total-card {{
+        
+        /* Sidebar sem espaços */
+        [data-testid="stSidebar"] {{
             background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin: 10px 0;
-            border-left: 5px solid {CORES["destaque"]};
+            border-right: 1px solid rgba(0,0,0,0.05);
+            overflow-y: auto;
+            max-height: 100vh;
         }}
+        [data-testid="stSidebar"] .block-container {{
+            padding: 0 !important;
+        }}
+        [data-testid="stSidebar"] > div:first-child {{
+            padding-top: 0 !important;
+            margin-top: 0 !important;
+            overflow-y: auto;
+            max-height: 100vh;
+        }}
+        
+        /* Estilos para alertas */
+        .success-alert {{
+            background-color: {CORES["sucesso"]}33;
+            border-left: 4px solid {CORES["sucesso"]};
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            margin: 0.5rem 0;
+        }}
+
+        .error-alert {{
+            background-color: {CORES["erro"]}33;
+            border-left: 4px solid {CORES["erro"]};
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            margin: 0.5rem 0;
+        }}
+
+        /* Estilos para métricas */
         .metric-container {{
             background-color: white;
+            padding: 1rem;
             border-radius: 8px;
-            padding: 15px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            margin-bottom: 10px;
+            margin-bottom: 1rem;
         }}
-        .highlight {{
-            color: {CORES["destaque"]};
-            font-weight: bold;
+
+        /* Estilos para cabeçalho da página */
+        .page-header {{
+            background: linear-gradient(135deg, {CORES["primaria"]}22, {CORES["secundaria"]}22);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
         }}
-        .footer {{
-            position: fixed;
-            bottom: 0;
-            width: 100%;
+
+        /* Data display */
+        .date-display {{
             background-color: white;
-            padding: 10px;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             text-align: center;
-            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+            font-size: 0.9rem;
+            margin-top: 2rem;
+        }}
+
+        /* Footer */
+        .footer {{
+            margin-top: 3rem;
+            padding: 1rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #666;
+            border-top: 1px solid #eee;
+        }}
+        
+        /* Estilo geral da aplicação */
+        .stApp {{
+            background-color: {CORES["background"]};
         }}
         </style>
     """, unsafe_allow_html=True)
@@ -72,6 +156,9 @@ VALORES_POR_FAIXA = {
         "p2_regulacao": 3000.0,
         "p2_esus": 2500.0,
         "p2_hosp": 5000.0,
+        "p2_analise": 2000.0,
+        "p2_apuracao": 2500.0,
+        "p2_relatorios": 1800.0,
         "p3_cnes": 2500.0,
         "p3_investsus": 1800.0,
         "p3_transferegov": 2000.0,
@@ -87,6 +174,9 @@ VALORES_POR_FAIXA = {
         "p2_regulacao": 4000.0,
         "p2_esus": 3500.0,
         "p2_hosp": 7000.0,
+        "p2_analise": 3000.0,
+        "p2_apuracao": 3200.0,
+        "p2_relatorios": 2500.0,
         "p3_cnes": 3000.0,
         "p3_investsus": 2500.0,
         "p3_transferegov": 2500.0,
@@ -102,6 +192,9 @@ VALORES_POR_FAIXA = {
         "p2_regulacao": 5000.0,
         "p2_esus": 4500.0,
         "p2_hosp": 10000.0,
+        "p2_analise": 4000.0,
+        "p2_apuracao": 4500.0,
+        "p2_relatorios": 3500.0,
         "p3_cnes": 3500.0,
         "p3_investsus": 3000.0,
         "p3_transferegov": 3000.0,
@@ -117,6 +210,9 @@ VALORES_POR_FAIXA = {
         "p2_regulacao": 7000.0,
         "p2_esus": 6000.0,
         "p2_hosp": 15000.0,
+        "p2_analise": 5000.0,
+        "p2_apuracao": 5500.0,
+        "p2_relatorios": 4500.0,
         "p3_cnes": 4000.0,
         "p3_investsus": 3500.0,
         "p3_transferegov": 3500.0,
@@ -132,6 +228,9 @@ VALORES_POR_FAIXA = {
         "p2_regulacao": 9000.0,
         "p2_esus": 7500.0,
         "p2_hosp": 20000.0,
+        "p2_analise": 6000.0,
+        "p2_apuracao": 6500.0,
+        "p2_relatorios": 5500.0,
         "p3_cnes": 5000.0,
         "p3_investsus": 4000.0,
         "p3_transferegov": 4000.0,
@@ -147,6 +246,9 @@ VALORES_POR_FAIXA = {
         "p2_regulacao": 10000.0,
         "p2_esus": 8500.0,
         "p2_hosp": 25000.0,
+        "p2_analise": 7000.0,
+        "p2_apuracao": 7500.0,
+        "p2_relatorios": 6500.0,
         "p3_cnes": 6000.0,
         "p3_investsus": 4500.0,
         "p3_transferegov": 4500.0,
@@ -162,6 +264,9 @@ VALORES_POR_FAIXA = {
         "p2_regulacao": 12000.0,
         "p2_esus": 10000.0,
         "p2_hosp": 30000.0,
+        "p2_analise": 8000.0,
+        "p2_apuracao": 8500.0,
+        "p2_relatorios": 7500.0,
         "p3_cnes": 7000.0,
         "p3_investsus": 5000.0,
         "p3_transferegov": 5000.0,
@@ -177,6 +282,9 @@ VALORES_POR_FAIXA = {
         "p2_regulacao": 15000.0,
         "p2_esus": 12000.0,
         "p2_hosp": 40000.0,
+        "p2_analise": 10000.0,
+        "p2_apuracao": 10500.0,
+        "p2_relatorios": 9000.0,
         "p3_cnes": 8000.0,
         "p3_investsus": 6000.0,
         "p3_transferegov": 6000.0,
@@ -192,6 +300,9 @@ VALORES_POR_FAIXA = {
         "p2_regulacao": 18000.0,
         "p2_esus": 15000.0,
         "p2_hosp": 50000.0,
+        "p2_analise": 12000.0,
+        "p2_apuracao": 12500.0,
+        "p2_relatorios": 11000.0,
         "p3_cnes": 9000.0,
         "p3_investsus": 7000.0,
         "p3_transferegov": 7000.0,
@@ -207,6 +318,9 @@ VALORES_POR_FAIXA = {
         "p2_regulacao": 20000.0,
         "p2_esus": 18000.0,
         "p2_hosp": 60000.0,
+        "p2_analise": 14000.0,
+        "p2_apuracao": 14500.0,
+        "p2_relatorios": 13000.0,
         "p3_cnes": 10000.0,
         "p3_investsus": 8000.0,
         "p3_transferegov": 8000.0,
@@ -222,6 +336,9 @@ VALORES_POR_FAIXA = {
         "p2_regulacao": 22000.0,
         "p2_esus": 20000.0,
         "p2_hosp": 70000.0,
+        "p2_analise": 16000.0,
+        "p2_apuracao": 16500.0,
+        "p2_relatorios": 15000.0,
         "p3_cnes": 12000.0,
         "p3_investsus": 9000.0,
         "p3_transferegov": 9000.0,
@@ -237,6 +354,9 @@ VALORES_POR_FAIXA = {
         "p2_regulacao": 25000.0,
         "p2_esus": 22000.0,
         "p2_hosp": 80000.0,
+        "p2_analise": 18000.0,
+        "p2_apuracao": 18500.0,
+        "p2_relatorios": 17000.0,
         "p3_cnes": 15000.0,
         "p3_investsus": 10000.0,
         "p3_transferegov": 10000.0,

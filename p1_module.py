@@ -92,7 +92,7 @@ def display_p1_calculator():
     # Cálculo Total
     total_p1 = val_consultoria + val_capacitacao + val_bi
     
-    # Exibição dos resultados em cards visuais
+    # Exibição dos resultados com métricas simples
     st.markdown("### Resumo do Orçamento")
     cols = st.columns([1, 1, 1])
     
@@ -105,14 +105,9 @@ def display_p1_calculator():
     with cols[2]:
         metric_card("BI Inteligente", val_bi)
     
-    # Card do total
-    st.markdown(f"""
-    <div class="total-card">
-        <h3>TOTAL MENSAL P1</h3>
-        <h2>{formatar_valor_reais(total_p1)}</h2>
-        <p>Valor estimado anual: {formatar_valor_reais(total_p1 * 12)}</p>
-    </div>
-    """, unsafe_allow_html=True)
+    # Total sem card, usando métrica padrão
+    st.subheader("TOTAL MENSAL P1")
+    st.metric("Total", formatar_valor_reais(total_p1), delta=f"Anual: {formatar_valor_reais(total_p1 * 12)}")
     
     # Gráfico de distribuição
     if total_p1 > 0:

@@ -6,3 +6,6 @@ Pillow==10.2.0
 openpyxl==3.1.2
 kaleido==0.2.1
 matplotlib==3.8.2
+reportlab==4.0.9
+fpdf2==2.7.8
+weasyprint==60.2

@@ -1,199 +1,124 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from config import VALORES_POR_FAIXA
+from config import VALORES_POR_FAIXA, faixas_populacionais
 from utils import formatar_valor_reais, metric_card
 
 def display_p2_calculator():
-    st.header("P2 - Serviços Tecnológicos")
-    st.caption("Configure os valores mensais de serviços tecnológicos com base nas necessidades do município.")
-
+    st.header("P2 - Contabilidade de Custos")
+    st.caption("Configure os valores mensais para contabilidade de custos com base na quantidade de unidades.")
+    
+    # Usar colunas para melhor layout
     col1, col2 = st.columns([1.2, 2])
-
+    
     with col1:
-        if 'p2_qtd' not in st.session_state: st.session_state.p2_qtd = 1
-        if 'p2_qtd_ace' not in st.session_state: st.session_state.p2_qtd_ace = 0
-        
+        # Usar session_state para guardar o valor entre interações
+        if 'p2_qtd' not in st.session_state:
+            st.session_state.p2_qtd = 1
+            
         # Reutilizar a faixa populacional já selecionada
-        faixa = st.session_state.get('faixa_populacional', None)
+        faixa = st.session_state.get('faixa_populacional', faixas_populacionais[0])
         st.subheader(f"Faixa: {faixa}")
         
-        qtd_unidades_p2 = st.number_input(
-            "Quantidade de Unidades:", 
+        qtd_unidades = st.number_input(
+            "Quantidade de Unidades de Saúde:", 
             min_value=1, 
             step=1, 
             key="p2_qtd",
-            help="Número de unidades que receberão os serviços tecnológicos"
+            help="Informe o número total de unidades de saúde do município"
         )
-        
-        # Campo para quantidade de ACE
-        qtd_ace = st.number_input(
-            "Quantidade de ACE:", 
-            min_value=0, 
-            step=1, 
-            key="p2_qtd_ace",
-            help="Número de Agentes de Combate às Endemias que utilizarão o aplicativo"
-        )
-        
-        # Explicação sobre ACE
-        if qtd_ace > 0:
-            st.info(f"💡 O valor do App ACE será calculado considerando {qtd_ace} agentes")
         
         # Sugerir valores com base na faixa populacional
-        if st.button("📊 Sugerir Valores de Serviços", help="Preenche com valores sugeridos para esta faixa populacional"):
+        if st.button("📊 Sugerir Valores", key="p2_sugerir", help="Preenche com valores sugeridos para esta faixa populacional"):
             if faixa in VALORES_POR_FAIXA:
                 valores_sugeridos = VALORES_POR_FAIXA[faixa]
                 # Ajustar valores com base no número de unidades
-                fator_ajuste = max(1.0, qtd_unidades_p2 / 5)
+                fator_ajuste = max(1.0, qtd_unidades / 5)  # Ajuste a cada 5 unidades
                 
-                st.session_state.p2_pec_val = valores_sugeridos.get("p2_pec", 20000.0) * fator_ajuste
+                st.session_state.p2_analise_val = valores_sugeridos["p2_analise"] * fator_ajuste
+                st.session_state.p2_apuracao_val = valores_sugeridos["p2_apuracao"] * fator_ajuste
+                st.session_state.p2_relatorios_val = valores_sugeridos["p2_relatorios"] * fator_ajuste
                 
-                # Calcular valor do aplicativo ACE baseado na quantidade de agentes
-                # Base de R$ 50,00 por agente + valor base do município
-                valor_base_app = valores_sugeridos.get("p2_app", 2000.0)
-                if qtd_ace > 0:
-                    st.session_state.p2_app_val = valor_base_app + (qtd_ace * 50.0)
-                else:
-                    st.session_state.p2_app_val = valor_base_app
-                
-                # Definir outros valores com valores padrão
-                st.session_state.p2_regulacao_val = valores_sugeridos.get("p2_regulacao", 5000.0) * fator_ajuste
-                st.session_state.p2_esus_val = valores_sugeridos.get("p2_esus", 3500.0) * fator_ajuste
-                st.session_state.p2_hosp_val = valores_sugeridos.get("p2_hosp", 8000.0) * fator_ajuste
-                
-                st.success(f"Valores tecnológicos sugeridos aplicados!")
-
-        # Opções adicionais
-        st.write("### Opções Adicionais")
+                st.success(f"Valores sugeridos aplicados para {faixa} com {qtd_unidades} unidades!")
         
-        if 'has_hospital' not in st.session_state: st.session_state.has_hospital = False
-        has_hospital = st.checkbox("Município possui hospital?", key="has_hospital")
+        st.info("💡 Os valores sugeridos são calculados com base na faixa populacional e na quantidade de unidades.")
         
-        if has_hospital and st.session_state.p2_hosp_val == 0:
-            st.session_state.p2_hosp_val = 8000.0 * max(1.0, qtd_unidades_p2 / 5)
-
     with col2:
-        st.subheader("Valores dos Serviços Tecnológicos")
+        st.subheader("Valores dos Serviços")
+        # Inputs para valores - operador digita
+        if 'p2_analise_val' not in st.session_state: st.session_state.p2_analise_val = 0.0
+        if 'p2_apuracao_val' not in st.session_state: st.session_state.p2_apuracao_val = 0.0
+        if 'p2_relatorios_val' not in st.session_state: st.session_state.p2_relatorios_val = 0.0
         
-        # Inputs para valores
-        if 'p2_pec_val' not in st.session_state: st.session_state.p2_pec_val = 0.0
-        if 'p2_app_val' not in st.session_state: st.session_state.p2_app_val = 0.0
-        if 'p2_comodato_val' not in st.session_state: st.session_state.p2_comodato_val = 0.0
-        if 'p2_regulacao_val' not in st.session_state: st.session_state.p2_regulacao_val = 0.0
-        if 'p2_esus_val' not in st.session_state: st.session_state.p2_esus_val = 0.0
-        if 'p2_hosp_val' not in st.session_state: st.session_state.p2_hosp_val = 0.0
-
         col_a, col_b = st.columns(2)
         
         with col_a:
-            val_pec = st.number_input(
-                "PEC Servidor com BI Inteligente:",
+            val_analise = st.number_input(
+                "Análise de Produção:",
                 min_value=0.0,
                 format="%.2f",
-                key="p2_pec_val",
-                help="Prontuário Eletrônico do Cidadão com análises avançadas"
+                key="p2_analise_val",
+                help="Valor mensal para análise detalhada da produção em saúde"
             )
             
-            # Atualizar descrição para incluir informação sobre agentes
-            app_description = "Aplicativo para Agentes Comunitários de Endemias"
-            if qtd_ace > 0:
-                app_description += f" ({qtd_ace} agentes)"
-                
-            val_app = st.number_input(
-                "Aplicativo Visita ACE:",
+            val_apuracao = st.number_input(
+                "Apuração de Custos:",
                 min_value=0.0,
                 format="%.2f",
-                key="p2_app_val",
-                help=app_description
+                key="p2_apuracao_val",
+                help="Valor mensal para apuração de custos dos serviços de saúde"
             )
-            
-            # Novo campo para Comodato
-            val_comodato = st.number_input(
-                "COMODATO APARELHO SMARTPHONE OU TABLET:",
-                min_value=0.0,
-                format="%.2f",
-                key="p2_comodato_val",
-                help="Valor para comodato de aparelhos para uso dos aplicativos"
-            )
-            
-            val_regulacao = st.number_input(
-                "Sistema de Regulação:",
-                min_value=0.0,
-                format="%.2f",
-                key="p2_regulacao_val",
-                help="Sistema para gerenciamento de filas e regulação de serviços"
-            )
-            
+        
         with col_b:
-            val_esus = st.number_input(
-                "eSUS Farma:",
+            val_relatorios = st.number_input(
+                "Relatórios Gerenciais:",
                 min_value=0.0,
                 format="%.2f",
-                key="p2_esus_val",
-                help="Sistema de gestão farmacêutica integrado ao eSUS"
+                key="p2_relatorios_val",
+                help="Valor mensal para geração de relatórios gerenciais"
             )
             
-            val_hosp = st.number_input(
-                "Sistema Hospitalar:",
-                min_value=0.0,
-                format="%.2f",
-                key="p2_hosp_val",
-                help="Solução completa para gestão hospitalar"
-            )
-
-    # Cálculo Total - atualizando para incluir o valor de comodato
-    total_p2 = val_pec + val_app + val_comodato + val_regulacao + val_esus + val_hosp
+            # Espaço para alinhamento visual
+            st.write("")
+            st.write("")
     
-    # Exibição dos resultados em cards visuais
-    st.markdown("### Resumo dos Serviços Tecnológicos")
+    # Cálculo do total
+    total_p2 = val_analise + val_apuracao + val_relatorios
     
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        metric_card("PEC Servidor", val_pec)
-        metric_card("Sistema de Regulação", val_regulacao)
+    # Exibição dos resultados com métricas simples
+    st.markdown("### Resumo do Orçamento")
+    cols = st.columns([1, 1, 1])
     
-    with col2:
-        # Adicionar informação da quantidade de ACE no card se aplicável
-        app_title = "Aplicativo ACE"
-        if qtd_ace > 0:
-            app_title += f" ({qtd_ace} agentes)"
-        metric_card(app_title, val_app)
-        metric_card("Comodato Aparelhos", val_comodato)
+    with cols[0]:
+        metric_card("Análise de Produção", val_analise)
     
-    with col3:
-        metric_card("eSUS Farma", val_esus)
-        metric_card("Sistema Hospitalar", val_hosp)
+    with cols[1]:
+        metric_card("Apuração de Custos", val_apuracao)
     
-    # Card do total
-    st.markdown(f"""
-    <div class="total-card">
-        <h3>TOTAL MENSAL P2 - SERVIÇOS TECNOLÓGICOS</h3>
-        <h2>{formatar_valor_reais(total_p2)}</h2>
-        <p>Valor estimado anual: {formatar_valor_reais(total_p2 * 12)}</p>
-    </div>
-    """, unsafe_allow_html=True)
+    with cols[2]:
+        metric_card("Relatórios Gerenciais", val_relatorios)
+    
+    # Total sem card, usando métrica padrão
+    st.subheader("TOTAL MENSAL P2")
+    st.metric("Total", formatar_valor_reais(total_p2), delta=f"Anual: {formatar_valor_reais(total_p2 * 12)}")
     
     # Gráfico de distribuição
     if total_p2 > 0:
-        # Modificar o título do App ACE para incluir informação sobre quantidade de agentes
-        app_label = 'App Visita ACE'
-        if qtd_ace > 0:
-            app_label += f' ({qtd_ace} agentes)'
-            
         dados = pd.DataFrame({
-            'Serviço': ['PEC Servidor', app_label, 'Comodato Aparelhos', 'Sistema de Regulação', 'eSUS Farma', 'Sistema Hospitalar'],
-            'Valor': [val_pec, val_app, val_comodato, val_regulacao, val_esus, val_hosp]
+            'Serviço': ['Análise de Produção', 'Apuração de Custos', 'Relatórios Gerenciais'],
+            'Valor': [val_analise, val_apuracao, val_relatorios],
+            'Porcentagem': [val_analise/total_p2*100, val_apuracao/total_p2*100, val_relatorios/total_p2*100]
         })
         
-        fig = px.bar(
+        fig = px.pie(
             dados, 
-            x='Serviço', 
-            y='Valor', 
-            title='Comparativo de Serviços Tecnológicos',
-            color='Valor',
-            color_continuous_scale='Teal'
+            values='Valor', 
+            names='Serviço',
+            title='Distribuição dos Serviços P2',
+            color_discrete_sequence=px.colors.sequential.Blues_r
         )
-        fig.update_layout(xaxis_tickangle=-45)
+        fig.update_traces(textposition='inside', textinfo='percent+label')
+        fig.update_layout(uniformtext_minsize=12, uniformtext_mode='hide')
         
         st.plotly_chart(fig, use_container_width=True)
     
